@@ -1,23 +1,26 @@
 package com.example.prsamina.helpchennai;
+//Certificate fingerprint (SHA1):
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
-import android.content.res.Configuration;
 
 import com.example.prsamina.helpchennai.adaptor.NavDrawerListAdapter;
 import com.example.prsamina.helpchennai.model.NavDrawerItems;
+import com.google.android.gms.maps.MapFragment;
 
 import java.util.ArrayList;
 
-import static com.example.prsamina.helpchennai.R.drawable.ic_drawer;
 import static com.example.prsamina.helpchennai.R.string.app_name;
-import static com.example.prsamina.helpchennai.R.string.hello_world;
 
 /**
  * Created by prsamina on 12/19/2015.
@@ -74,7 +77,6 @@ public class MainActivity extends Activity {
 
         // Recycle the typed array
         navMenuIcons.recycle();
-
         // setting the nav drawer list adapter
         adapter = new NavDrawerListAdapter(getApplicationContext(), navDrawerItems);
         mDrawerList.setAdapter(adapter);
@@ -87,7 +89,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,app_name, app_name) {
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, app_name, app_name) {
             public void onDrawerClosed(View view) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                     getActionBar().setTitle(mTitle);
@@ -106,11 +108,48 @@ public class MainActivity extends Activity {
 
         if (savedInstanceState == null) {
             // on first time display view for first nav item
-            // displayView(0);
+             //displayView(0);
         }
 
-         }
+        ////Adding the Listener to the list
 
+
+        mDrawerList.setOnItemClickListener(new SlideMenuClickListener());}
+
+    void displayView(int position) {
+        Fragment fragment = null;
+        switch (position) {
+            case 0: {
+                fragment = new MapFragment();
+                break;
+            }
+            case 4: fragment= new Climate();
+            default:
+                break;
+        }
+        if (fragment != null) {
+            //MapFragment mapFragment =new MapFragment();
+            FragmentManager fragmentManager = getFragmentManager();
+            fragmentManager.beginTransaction().replace(R.id.map, fragment).commit();
+            mDrawerList.setItemChecked(position, true);
+            mDrawerList.setSelection(position);
+            setTitle(navMenuTitles[position]);
+            mDrawerLayout.closeDrawer(mDrawerList);
+        } else {
+            Log.e("MyActivity", "Error in creating Fragment");
+        }
     }
+
+
+    private class SlideMenuClickListener implements AdapterView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            displayView(position);
+        }
+    }
+}
+
+
+
 
 
