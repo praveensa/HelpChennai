@@ -28,5 +28,9 @@
 
     <!-- Content Description -->
     <string name="desc_list_item_icon">Item Icon</string>
+    <string name="yahoo">Powered by YAHOO</string>
+    <string name="location">Chennai</string>
+    <string name="condition">Condition</string>
+    <string name="Temperature">Temperature</string>
 
 </resources>
