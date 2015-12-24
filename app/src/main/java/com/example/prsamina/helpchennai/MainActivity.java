@@ -2,11 +2,12 @@ package com.example.prsamina.helpchennai;
 //Certificate fingerprint (SHA1):
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.res.TypedArray;
+import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.util.Log;
@@ -16,7 +17,15 @@ import android.widget.ListView;
 
 import com.example.prsamina.helpchennai.adaptor.NavDrawerListAdapter;
 import com.example.prsamina.helpchennai.model.NavDrawerItems;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 
@@ -25,10 +34,14 @@ import static com.example.prsamina.helpchennai.R.string.app_name;
 /**
  * Created by prsamina on 12/19/2015.
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
+    private int tempOption = -1;
+    //Fussed Location Provider
+    private  float current_long,current_lat;
+    GoogleApiClient googleApiClient;
 
     // nav drawer title
     private CharSequence mDrawerTitle;
@@ -81,7 +94,8 @@ public class MainActivity extends Activity {
         adapter = new NavDrawerListAdapter(getApplicationContext(), navDrawerItems);
         mDrawerList.setAdapter(adapter);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            getActionBar().setDisplayHomeAsUpEnabled(true);
+            //getActionBar().setDisplayHomeAsUpEnabled(true);
+            getActionBar().setIcon(R.drawable.safe);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
@@ -108,22 +122,44 @@ public class MainActivity extends Activity {
 
         if (savedInstanceState == null) {
             // on first time display view for first nav item
-             //displayView(0);
+            displayView(0);
         }
+        mDrawerList.setOnItemClickListener(new SlideMenuClickListener());
 
-        ////Adding the Listener to the list
+        if(googleApiClient==null)
+        {
+            googleApiClient=new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
+        }
+    }
 
-
-        mDrawerList.setOnItemClickListener(new SlideMenuClickListener());}
 
     void displayView(int position) {
-        Fragment fragment = null;
+        MapFragment fragment = null;
+        mDrawerTitle = navMenuTitles[position];
         switch (position) {
             case 0: {
+                tempOption = 0;
                 fragment = new MapFragment();
                 break;
             }
-            case 4: fragment= new Climate();
+            case 1: {
+                tempOption = 1;
+                fragment = new MapFragment();
+                fragment.getMapAsync(this);
+                break;
+            }
+            case 2: {
+                tempOption = 3;
+                fragment = new MapFragment();
+                fragment.getMapAsync(this);
+                break;
+            }
+            case 3: {
+
+                break;
+            }
+            case 4: //fragment= new Climate();
+                break;
             default:
                 break;
         }
@@ -140,6 +176,65 @@ public class MainActivity extends Activity {
         }
     }
 
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        googleMap.addMarker(new MarkerOptions().position(new LatLng(70, 80)).title("Test"));
+        LatLng Chennai = new LatLng(13.0827, 80.2707);
+        if (tempOption == 1)
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Chennai, 12));
+        else {
+            /*if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    public void requestPermissions(@NonNull String[] permissions, int requestCode)
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for Activity#requestPermissions for more details.
+                return;
+            }*/
+            //noinspection ResourceType
+            googleMap.setMyLocationEnabled(true);
+            googleMap.addMarker(new MarkerOptions().title("hereIam").position(new LatLng(current_long,current_lat)));
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current_long,current_lat),10));
+
+        }
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        //noinspection ResourceType
+        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+        if (mLastLocation != null) {
+            current_lat=Float.parseFloat(String.valueOf(mLastLocation.getLatitude()));
+            current_long=Float.parseFloat(String.valueOf(mLastLocation.getLongitude()));
+        }
+
+
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    protected void onStart() {
+        googleApiClient.connect();
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        googleApiClient.disconnect();
+        super.onStop();
+    }
 
     private class SlideMenuClickListener implements AdapterView.OnItemClickListener {
         @Override
