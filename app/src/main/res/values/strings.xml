@@ -32,5 +32,6 @@
     <string name="location">Chennai</string>
     <string name="condition">Condition</string>
     <string name="Temperature">Temperature</string>
+    <string name="name">Name:</string>
 
 </resources>

@@ -1,12 +1,9 @@
 package com.example.prsamina.helpchennai;
 
-import android.app.Fragment;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,7 +17,7 @@ import static android.widget.Toast.LENGTH_LONG;
 /**
  * Created by prsamina on 12/20/2015.
  */
-public class Climate extends Fragment implements WeatherServiceCallBack {
+public class Climate extends Activity implements WeatherServiceCallBack {
     private ImageView climatImg;
     private TextView temperature;
     private TextView condition;
@@ -28,25 +25,27 @@ public class Climate extends Fragment implements WeatherServiceCallBack {
     private ProgressDialog progressBar;
     private YahooWeatherService service;
 
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,Bundle savedInstanceState)
-    {
-        View v=  inflater.inflate(R.layout.climate, container, false);
-        //WebView webView=(WebView)v.findViewById(R.id.webView);
-        //webView.loadUrl("http://www.accuweather.com/en/in/chennai/206671/weather-forecast/206671");
-        climatImg=(ImageView)v.findViewById(R.id.climateimg);
-        temperature=(TextView)v.findViewById(R.id.temperature);
-        condition=(TextView)v.findViewById(R.id.condition);
-        location=(TextView)v.findViewById(R.id.location);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.climate);
+
+        climatImg=(ImageView)findViewById(R.id.climateimg);
+        temperature=(TextView)findViewById(R.id.temperature);
+        condition=(TextView)findViewById(R.id.condition);
+        location=(TextView)findViewById(R.id.location);
 
         service=new YahooWeatherService(this);
-        progressBar=new ProgressDialog(getActivity());
+        progressBar=new ProgressDialog(this);
         progressBar.setMessage("Loading!!..........");
         progressBar.show();
         service.refreshWeather("Chennai");
 
 
-        return  v;
+
     }
+
+
 
     @Override
     public void serviceSuccess(Channel channel) {
@@ -55,7 +54,7 @@ public class Climate extends Fragment implements WeatherServiceCallBack {
         Drawable drawable=getResources().getDrawable(rId,null);
         climatImg.setImageDrawable(drawable);
         location.setText("Chennai");
-        temperature.setText(channel.getItems().getCondition().getTemp()+"\u00B0"+channel.getUnit().getTempUnit());
+        temperature.setText(channel.getItems().getCondition().getTemp() + "\u00B0" + channel.getUnit().getTempUnit());
         condition.setText(channel.getItems().getCondition().getDesc());
     }
 
@@ -63,7 +62,8 @@ public class Climate extends Fragment implements WeatherServiceCallBack {
     public void serviceFailure(Exception e) {
         progressBar.hide();
         e.printStackTrace();
-        Toast.makeText(getActivity(),e.toString(), LENGTH_LONG).show();
+        Toast.makeText(this,e.toString(), LENGTH_LONG).show();
 
     }
+
 }

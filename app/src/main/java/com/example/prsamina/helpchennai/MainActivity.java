@@ -3,6 +3,7 @@ package com.example.prsamina.helpchennai;
 
 import android.app.Activity;
 import android.app.FragmentManager;
+import android.content.Intent;
 import android.content.res.TypedArray;
 import android.location.Location;
 import android.os.Build;
@@ -10,7 +11,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -55,11 +55,15 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
 
     private ArrayList<NavDrawerItems> navDrawerItems;
     private NavDrawerListAdapter adapter;
-
+    private MapFragment fragment;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //Adding MapFragment
+        fragment = new MapFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.map, fragment).commit();
 
         mTitle = mDrawerTitle = getTitle();
 
@@ -130,58 +134,60 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
         {
             googleApiClient=new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
         }
+
+
+
+
     }
 
 
     void displayView(int position) {
-        MapFragment fragment = null;
         mDrawerTitle = navMenuTitles[position];
         switch (position) {
             case 0: {
                 tempOption = 0;
-                fragment = new MapFragment();
+                fragment.getMapAsync(this);
                 break;
             }
             case 1: {
                 tempOption = 1;
-                fragment = new MapFragment();
                 fragment.getMapAsync(this);
                 break;
             }
             case 2: {
-                tempOption = 3;
-                fragment = new MapFragment();
-                fragment.getMapAsync(this);
+                startActivity(new Intent(this, ShareHome.class));
+                mDrawerLayout.closeDrawer(mDrawerList);
                 break;
+
             }
             case 3: {
-
-                break;
-            }
+                tempOption = 3;
+                fragment.getMapAsync(this);
+                break; }
             case 4: //fragment= new Climate();
+                    startActivity(new Intent(this,Climate.class));
+                     mDrawerLayout.closeDrawer(mDrawerList);
+
                 break;
             default:
                 break;
         }
-        if (fragment != null) {
             //MapFragment mapFragment =new MapFragment();
-            FragmentManager fragmentManager = getFragmentManager();
-            fragmentManager.beginTransaction().replace(R.id.map, fragment).commit();
+
             mDrawerList.setItemChecked(position, true);
             mDrawerList.setSelection(position);
             setTitle(navMenuTitles[position]);
             mDrawerLayout.closeDrawer(mDrawerList);
-        } else {
-            Log.e("MyActivity", "Error in creating Fragment");
-        }
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         googleMap.addMarker(new MarkerOptions().position(new LatLng(70, 80)).title("Test"));
-        LatLng Chennai = new LatLng(13.0827, 80.2707);
-        if (tempOption == 1)
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Chennai, 12));
+            LatLng Chennai = new LatLng(13.0827, 80.2707);
+        if (tempOption == 1) {
+
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(Chennai, 12));
+        }
         else {
             /*if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling

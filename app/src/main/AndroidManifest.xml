@@ -32,6 +32,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".Climate">
+
+        </activity>
+        <activity android:name=".ShareHome">
+        </activity>
+        <!--<activity android:name=".Test"/>-->
 
     </application>
 
