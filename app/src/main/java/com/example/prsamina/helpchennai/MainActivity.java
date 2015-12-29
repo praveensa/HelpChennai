@@ -3,17 +3,21 @@ package com.example.prsamina.helpchennai;
 
 import android.app.Activity;
 import android.app.FragmentManager;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.example.prsamina.helpchennai.adaptor.NavDrawerListAdapter;
 import com.example.prsamina.helpchennai.model.NavDrawerItems;
@@ -27,7 +31,14 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.apache.http.NameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import static com.example.prsamina.helpchennai.R.string.app_name;
 
@@ -40,8 +51,15 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
     private ActionBarDrawerToggle mDrawerToggle;
     private int tempOption = -1;
     //Fussed Location Provider
-    private  float current_long,current_lat;
+    private  double current_long,current_lat;
     GoogleApiClient googleApiClient;
+    //LocateSafePlaces
+    JSONParser jsonParser=new JSONParser();
+    public final String url="http://helpchennai.netau.net/";
+    ArrayList<HashMap<String,String>> safePlaces=new ArrayList<>();
+
+
+
 
     // nav drawer title
     private CharSequence mDrawerTitle;
@@ -145,7 +163,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
         mDrawerTitle = navMenuTitles[position];
         switch (position) {
             case 0: {
-                tempOption = 0;
+                GPSTracker gps =new GPSTracker(this);
+                if(gps.isLocationAvailabe())
+                {
+                    current_lat=Float.parseFloat(String.valueOf(gps.getLatitude()));
+                    current_long= (float) gps.getLongitude();
+                }
                 fragment.getMapAsync(this);
                 break;
             }
@@ -182,29 +205,25 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        googleMap.addMarker(new MarkerOptions().position(new LatLng(70, 80)).title("Test"));
-            LatLng Chennai = new LatLng(13.0827, 80.2707);
         if (tempOption == 1) {
-
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(Chennai, 12));
+            googleMap.clear();
+            //For displaying supplies from database
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current_lat,current_long), 12));
         }
         else {
-            /*if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    public void requestPermissions(@NonNull String[] permissions, int requestCode)
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for Activity#requestPermissions for more details.
-                return;
-            }*/
-            //noinspection ResourceType
-            googleMap.setMyLocationEnabled(true);
-            googleMap.addMarker(new MarkerOptions().title("hereIam").position(new LatLng(current_long,current_lat)));
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current_long,current_lat),10));
+            //For displaying the safe location from database
+            safeLocate(googleMap);
+            //googleMap.addMarker(new MarkerOptions().title("hereIam").position(new LatLng(current_lat, current_long)));
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current_lat,current_long),10));
 
         }
+    }
+
+    private void safeLocate(GoogleMap googleMap) {
+
+        new LoadSafePlaces().execute();
+
+
     }
 
     @Override
@@ -246,6 +265,77 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             displayView(position);
+        }
+    }
+
+    private class LoadSafePlaces extends AsyncTask<String,String,String>{
+
+        ProgressDialog progressDialog=new ProgressDialog(MainActivity.this);
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog.setIndeterminate(false);
+            progressDialog.setMessage("Fetching Data from server ...");
+            progressDialog.setCancelable(true);
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            //noinspection deprecation
+            List<NameValuePair> parms=new ArrayList<NameValuePair>();
+            JSONObject jsonObject=jsonParser.makeHttpRequest(url+"RetrieveData.php","GET",parms);
+            try {
+                int success=jsonObject.getInt("status");
+                if(success==0)
+                {   JSONArray location=jsonObject.getJSONArray("location");
+                    Log.d("All Location", location.toString());
+
+                    for(int i=0;i<location.length();i++)
+                    {
+                        JSONObject c=location.getJSONObject(i);
+                        HashMap<String,String> map = new HashMap<>();
+                        map.put("phone",c.getString("phone"));
+                        map.put("latitude",String.valueOf(c.getDouble("latitude")));
+                        map.put("longitude",String.valueOf(c.getDouble("longitude")));
+                        safePlaces.add(map);
+                    }
+
+                }
+                else
+                {
+                    HashMap<String,String> map = new HashMap<>();
+                    map.put("phone","1234567");
+                    map.put("latitude",String.valueOf(12.8983473));
+                    map.put("longitude",String.valueOf(77.6003738));
+                    safePlaces.add(map);
+
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            progressDialog.cancel();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this,"testing 123",Toast.LENGTH_LONG).show();
+                    for(int i=0;i<safePlaces.size();i++)
+                    {
+                        //LatLng temp=new LatLng(0,0);
+                        LatLng temp=new LatLng(Float.parseFloat(safePlaces.get(i).get("latitude")),Float.parseFloat(safePlaces.get(i).get("longitude")));
+                        //noinspection deprecation
+                        fragment.getMap().addMarker(new MarkerOptions().position(temp));
+                    }
+                }
+            });
+
         }
     }
 }
