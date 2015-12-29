@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,6 +19,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.apache.http.NameValuePair;
@@ -28,7 +30,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShareHome extends Activity implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks ,LocationListener
+public class ShareHome extends Activity implements OnMapReadyCallback,GoogleMap.OnMarkerDragListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks ,LocationListener
 {
     public ProgressDialog progressDialog;
     private GoogleMap googleMap;
@@ -47,6 +49,8 @@ public class ShareHome extends Activity implements OnMapReadyCallback, GoogleApi
         mapFragment=new MapFragment();
         FragmentManager fragmentManager=getFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.map,mapFragment).commit();
+        //noinspection deprecation
+//        mapFragment.getMap().setOnMarkerDragListener(this);
         GPSTracker gps=new GPSTracker(this);
         if(gps.isLocationAvailabe())
         {
@@ -77,10 +81,11 @@ public class ShareHome extends Activity implements OnMapReadyCallback, GoogleApi
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        googleMap.setOnMarkerDragListener(this);
         MarkerOptions mo=new MarkerOptions();
         mo.title("MyHome");
         LatLng currentPosition=new LatLng(latitude,longitude);
-        mo.position(currentPosition);
+        mo.position(currentPosition).draggable(true);
        // mo.icon(BitmapDescriptorFactory.fromResource(R.drawable.sh));
         googleMap.addMarker(mo);
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentPosition,16));
@@ -115,6 +120,7 @@ public class ShareHome extends Activity implements OnMapReadyCallback, GoogleApi
 
     }
 
+
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
 
@@ -133,6 +139,24 @@ public class ShareHome extends Activity implements OnMapReadyCallback, GoogleApi
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+        LatLng  homePosition=marker.getPosition();
+        latitude=homePosition.latitude;
+        longitude=homePosition.longitude;
+        Toast.makeText(this,"testing dragable marker",Toast.LENGTH_LONG).show();
     }
 
     private class InsertData extends AsyncTask<String,String,String> {
