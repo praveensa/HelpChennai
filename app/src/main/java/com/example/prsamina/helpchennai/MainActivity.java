@@ -2,8 +2,10 @@ package com.example.prsamina.helpchennai;
 //Certificate fingerprint (SHA1):
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.location.Location;
@@ -227,6 +229,26 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
     }
 
     @Override
+    public void onBackPressed() {
+        AlertDialog.Builder close=new AlertDialog.Builder(MainActivity.this);
+        close.setTitle("Exiting the App ?");
+        close.setMessage("Are you sure wanna go out?");
+        close.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        close.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        close.show();
+    }
+
+    @Override
     public void onConnected(Bundle bundle) {
         //noinspection ResourceType
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
@@ -285,6 +307,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
             //noinspection deprecation
             List<NameValuePair> parms=new ArrayList<NameValuePair>();
             JSONObject jsonObject=jsonParser.makeHttpRequest(url+"RetrieveData.php","GET",parms);
+            if(jsonObject==null)
             try {
                 int success=jsonObject.getInt("status");
                 if(success==0)
