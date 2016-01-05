@@ -57,9 +57,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
     GoogleApiClient googleApiClient;
     //LocateSafePlaces
     JSONParser jsonParser=new JSONParser();
-    public final String url="http://helpchennai.netau.net/";
+    public final String url= "http://helpchennai.netau.net/";
     ArrayList<HashMap<String,String>> safePlaces=new ArrayList<>();
-
+    ArrayList<HashMap<String,String>> supplyCamps=new ArrayList<>();
 
 
 
@@ -155,16 +155,22 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
             googleApiClient=new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
         }
 
-
-
-
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        displayView(0);
+    }
 
     void displayView(int position) {
         mDrawerTitle = navMenuTitles[position];
         switch (position) {
             case 0: {
+               // fragment = new MapFragment();
+                //FragmentManager fragmentManager = getFragmentManager();
+                //fragmentManager.beginTransaction().replace(R.id.map, fragment).commit();
+                tempOption=0;
                 GPSTracker gps =new GPSTracker(this);
                 if(gps.isLocationAvailabe())
                 {
@@ -175,7 +181,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
                 break;
             }
             case 1: {
-                tempOption = 1;
+                tempOption=1;
                 fragment.getMapAsync(this);
                 break;
             }
@@ -187,7 +193,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
             }
             case 3: {
                 tempOption = 3;
-                fragment.getMapAsync(this);
+                 startActivity(new Intent(this,TrackPerson.class));
+                 mDrawerLayout.closeDrawer(mDrawerList);
                 break; }
             case 4: //fragment= new Climate();
                     startActivity(new Intent(this,Climate.class));
@@ -209,7 +216,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
     public void onMapReady(GoogleMap googleMap) {
         if (tempOption == 1) {
             googleMap.clear();
-            //For displaying supplies from database
+            new SupplyCamp().execute();
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current_lat,current_long), 12));
         }
         else {
@@ -307,24 +314,24 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
             //noinspection deprecation
             List<NameValuePair> parms=new ArrayList<NameValuePair>();
             JSONObject jsonObject=jsonParser.makeHttpRequest(url+"RetrieveData.php","GET",parms);
-            if(jsonObject==null)
-            try {
-                int success=jsonObject.getInt("status");
-                if(success==0)
-                {   JSONArray location=jsonObject.getJSONArray("location");
-                    Log.d("All Location", location.toString());
+               try {
+                    int success = jsonObject.getInt("status");
+                    if (success == 0) {
+                        JSONArray location = jsonObject.getJSONArray("location");
+                        Log.d("All Location", location.toString());
 
-                    for(int i=0;i<location.length();i++)
-                    {
-                        JSONObject c=location.getJSONObject(i);
-                        HashMap<String,String> map = new HashMap<>();
-                        map.put("phone",c.getString("phone"));
-                        map.put("latitude",String.valueOf(c.getDouble("latitude")));
-                        map.put("longitude",String.valueOf(c.getDouble("longitude")));
-                        safePlaces.add(map);
+                        for (int i = 0; i < location.length(); i++) {
+                            JSONObject c = location.getJSONObject(i);
+                            HashMap<String, String> map = new HashMap<>();
+                            map.put("phone", c.getString("phone"));
+                            map.put("latitude", String.valueOf(c.getDouble("latitude")));
+                            map.put("longitude", String.valueOf(c.getDouble("longitude")));
+                            safePlaces.add(map);
+                        }
+
                     }
 
-                }
+
                 else
                 {
                     HashMap<String,String> map = new HashMap<>();
@@ -334,8 +341,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
                     safePlaces.add(map);
 
                 }
+
             } catch (JSONException e) {
-                e.printStackTrace();
+                   Log.e("error","hello world");
+                   e.printStackTrace();
             }
 
             return null;
@@ -348,11 +357,76 @@ public class MainActivity extends Activity implements OnMapReadyCallback,GoogleA
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(MainActivity.this,"testing 123",Toast.LENGTH_LONG).show();
                     for(int i=0;i<safePlaces.size();i++)
                     {
                         //LatLng temp=new LatLng(0,0);
                         LatLng temp=new LatLng(Float.parseFloat(safePlaces.get(i).get("latitude")),Float.parseFloat(safePlaces.get(i).get("longitude")));
+                        //noinspection deprecation
+                        fragment.getMap().addMarker(new MarkerOptions().position(temp));
+                    }
+                    Toast.makeText(MainActivity.this,"The fire rises",Toast.LENGTH_LONG).show();
+                }
+            });
+
+        }
+    }
+
+    private class SupplyCamp extends AsyncTask <String,String,String> {
+        ProgressDialog progressDialog=new ProgressDialog(MainActivity.this);
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog.setMessage("Loading SupplyCamps...");
+            progressDialog.setCancelable(true);
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            List<NameValuePair> parms=new ArrayList<NameValuePair>();
+            JSONObject jsonObject=jsonParser.makeHttpRequest(url+"supplies.php","GET",parms);
+            try {
+                int status=jsonObject.getInt("status");
+                if(status==0)
+                {
+                    JSONArray location = jsonObject.getJSONArray("Details");
+                    Log.d("All Location", location.toString());
+
+                    for (int i = 0; i < location.length(); i++) {
+                        JSONObject c = location.getJSONObject(i);
+                        HashMap<String, String> map = new HashMap<>();
+                        map.put("phone", c.getString("phone"));
+                        map.put("latitude", String.valueOf(c.getDouble("latitude")));
+                        map.put("longitude", String.valueOf(c.getDouble("longitude")));
+                        supplyCamps.add(map);
+                    }
+
+                }
+                else
+                {
+                    HashMap<String,String> map = new HashMap<>();
+                    map.put("phone","1234567");
+                    map.put("latitude",String.valueOf(12.8983473));
+                    map.put("longitude",String.valueOf(77.6003738));
+                    supplyCamps.add(map);
+
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            progressDialog.cancel();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < supplyCamps.size(); i++) {
+                        //LatLng temp=new LatLng(0,0);
+                        LatLng temp = new LatLng(Float.parseFloat(supplyCamps.get(i).get("latitude")), Float.parseFloat(supplyCamps.get(i).get("longitude")));
                         //noinspection deprecation
                         fragment.getMap().addMarker(new MarkerOptions().position(temp));
                     }

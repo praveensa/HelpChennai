@@ -37,6 +37,8 @@
         </activity>
         <activity android:name=".ShareHome">
         </activity>
+        <activity android:name=".TrackPerson"/>
+        <activity android:name=".Test"/>
         <!--<activity android:name=".Test"/>-->
 
     </application>

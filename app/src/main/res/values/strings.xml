@@ -12,7 +12,7 @@
         <item >Locate Safe Place</item>
         <item >Supplies</item>
         <item >Share My Home</item>
-        <item >Help</item>
+        <item >Track People</item>
         <item >Climate</item>
     </string-array>
 
@@ -22,7 +22,7 @@
         <item>@drawable/safe</item>
         <item>@drawable/supplies</item>
         <item>@drawable/home</item>
-        <item>@drawable/help</item>
+        <item>@drawable/track</item>
         <item>@drawable/climate</item>
     </array>
 
@@ -33,5 +33,10 @@
     <string name="condition">Condition</string>
     <string name="Temperature">Temperature</string>
     <string name="name">Name:</string>
+    <string name="formheading">Mark YourSelf as safe</string>
+    <string name="phonenumber">Enter your phone Number</string>
+    <string name="Comments">your signature</string>
+    <string name="phone">PhoneNumber</string>
+    <string name="url">http://helpchennai.netau.net/</string>
 
 </resources>

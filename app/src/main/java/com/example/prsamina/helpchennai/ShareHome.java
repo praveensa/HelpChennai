@@ -38,8 +38,8 @@ public class ShareHome extends Activity implements OnMapReadyCallback,GoogleMap.
     double latitude,longitude;
     public static TextView name;
     public TextView phone;
-    public Button register;
-    public final String url="http://helpchennai.netau.net/insertdata.php";
+    public Button register,supplies;
+    public final String url="http://helpchennai.netau.net/";
     JSONParser jsonParser=new JSONParser();
 
     @Override
@@ -63,10 +63,11 @@ public class ShareHome extends Activity implements OnMapReadyCallback,GoogleMap.
         }
 
         mapFragment.getMapAsync(this);
-
+        String s=getIntent().getStringExtra("phone");
         name=(TextView)findViewById(R.id.name);
         phone=(TextView)findViewById(R.id.phone);
         register=(Button)findViewById(R.id.register);
+        supplies=(Button)findViewById(R.id.supplies);
         register.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -74,9 +75,17 @@ public class ShareHome extends Activity implements OnMapReadyCallback,GoogleMap.
                new  InsertData(name.getText().toString(),phone.getText().toString(),latitude,longitude).execute();
             }
         });
+        supplies.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                 new Remove().execute();
+            }
+        });
+
 
 
     }
+
 
 
     @Override
@@ -191,7 +200,7 @@ public class ShareHome extends Activity implements OnMapReadyCallback,GoogleMap.
             param.add(new BasicNameValuePair("latitude",String.valueOf(lat)));
             //noinspection deprecation
             param.add(new BasicNameValuePair("longitude", String.valueOf(lon)));
-            JSONObject jsonObject=jsonParser.makeHttpRequest(url, "GET", param);
+            JSONObject jsonObject=jsonParser.makeHttpRequest(url+"insertdata.php", "GET", param);
             try {
                 int success=jsonObject.getInt("status");
 
@@ -207,6 +216,47 @@ public class ShareHome extends Activity implements OnMapReadyCallback,GoogleMap.
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             progressDialog.dismiss();
+        }
+    }
+
+    private class Remove extends  AsyncTask {
+       private  String phone;
+        Remove(String s)
+        {
+            phone=s;
+        }
+        ProgressDialog progressDialog=new ProgressDialog(ShareHome.this);
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog.setMessage("Removing your entry");
+            progressDialog.show();
+            progressDialog.setCancelable(true);
+
+        }
+
+        @Override
+        protected Object doInBackground(Object[] params) {
+            List<NameValuePair> param  =new ArrayList<NameValuePair>();
+            //noinspection deprecation
+            //noinspection deprecation
+            param.add(new BasicNameValuePair("phone",phone));
+            JSONObject jsonObject=jsonParser.makeHttpRequest(url+"removeentry.php", "GET", param);
+            try {
+                int success=jsonObject.getInt("status");
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Object o) {
+            super.onPostExecute(o);
+            progressDialog.cancel();
+
         }
     }
 }
